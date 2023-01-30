@@ -1,0 +1,45 @@
+version: '3.7'
+
+services:
+  api-nestin:
+    container_name: api-nestin
+    image: api-nestin:dev
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+    command: npm run start:dev
+    env_file:
+    - .env
+    networks:
+      - nestin-connect
+    depends_on:
+      - mysql-nestin
+
+
+  mysql-nestin:
+    container_name: mysql-nestin
+    image: mysql:5.6
+    environment:
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+    ports:
+      - '${DB_PORT}:${DB_PORT}'
+    networks:
+      - nestin-connect
+    volumes:
+      - ~/docker/volumes/Nestin_MySQL:/var/lib/mysql
+    logging:
+      driver: none
+
+networks:
+  nestin-connect:
+    driver: bridge
+          
+
