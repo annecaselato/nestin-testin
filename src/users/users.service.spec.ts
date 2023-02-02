@@ -17,7 +17,8 @@ describe('UsersService', () => {
         {
           provide: USER_REPOSITORY_TOKEN,
           useValue: {
-            save: jest.fn(),
+            insert: jest.fn(),
+            findOne: jest.fn(),
           },
         },
       ],
@@ -36,10 +37,19 @@ describe('UsersService', () => {
   });
 
   describe('create', () => {
-    it('should call userRespository.create with correct parameters', async () => {
+    it('should call userRespository.insert with correct parameters', async () => {
       const newUser = { name: 'Test User', email: 'testuser@email.com' };
       await usersService.create(newUser);
-      expect(userRepository.save).toHaveBeenCalledWith(newUser);
+      expect(userRepository.insert).toHaveBeenCalledWith(newUser);
+    });
+  });
+
+  describe('findOneByEmail', () => {
+    it('should call userRespository.findOne with correct parameters', async () => {
+      await usersService.findOneByEmail('test@email.com');
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { email: 'test@email.com' },
+      });
     });
   });
 });

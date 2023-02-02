@@ -1,10 +1,11 @@
 import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersModule } from '../src/users/users.module';
 import { User } from '../src/users/user.entity';
+import { useContainer } from 'class-validator';
 
 describe('Users E2E', () => {
   let app: INestApplication;
@@ -27,23 +28,54 @@ describe('Users E2E', () => {
     app = module.createNestApplication();
     userRepository = module.get<Repository<User>>('UserRepository');
 
-    await app.init();
-  });
+    useContainer(app.select(UsersModule), { fallbackOnErrors: true });
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
-  describe(`/POST users`, () => {
-    it('should return 201 if all parameters are valid', () => {
-      return request(app.getHttpServer())
-        .post('/users')
-        .send({ name: 'Test User', email: 'test.user@email.com' })
-        .expect(201);
-    });
+    await app.init();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  afterEach(async () => {
-    await userRepository.query('DROP TABLE user');
+  describe(`/POST users`, () => {
+    it('should return 201 if all parameters are valid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users')
+        .send({ name: 'Test User', email: 'test.user@email.com' });
+
+      expect(response.status).toEqual(201);
+      await userRepository.query('DELETE FROM user');
+    });
+
+    it('should return 400 if name is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users')
+        .send({ name: '', email: 'test.user@email.com' });
+
+      expect(response.status).toEqual(400);
+    });
+
+    it('should return 400 if email is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users')
+        .send({ name: 'Test User', email: 'test.user@email' });
+
+      expect(response.status).toEqual(400);
+    });
+
+    it('should return 400 if user already exist', async () => {
+      await userRepository.insert({
+        name: 'User One',
+        email: 'user.one@email.com',
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/users')
+        .send({ name: 'Test User', email: 'user.one@email.com' });
+
+      expect(response.status).toEqual(400);
+      await userRepository.query('DELETE FROM user');
+    });
   });
 });
