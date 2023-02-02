@@ -14,7 +14,6 @@ export class EmailAvailability implements ValidatorConstraintInterface {
   constructor(private readonly usersService: UsersService) {}
 
   async validate(email: string) {
-    console.log('PASSA AQUI');
     const user = await this.usersService.findOneByEmail(email);
     return !user;
   }
