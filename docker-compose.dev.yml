@@ -13,13 +13,19 @@ services:
     ports:
       - ${SERVER_PORT}:${SERVER_PORT}
     command: npm run start:dev
-    env_file:
-    - .env
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      SERVER_PORT: ${SERVER_PORT}
+      DB_HOST: mysql-nestin
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      DB_PORT: 3306
     networks:
       - nestin-connect
     depends_on:
       - mysql-nestin
-
 
   mysql-nestin:
     container_name: mysql-nestin
